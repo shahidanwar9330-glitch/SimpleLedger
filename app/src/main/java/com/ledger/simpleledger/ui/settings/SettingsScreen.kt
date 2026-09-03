@@ -321,13 +321,13 @@ fun SettingsScreen() {
     }
 }
 
-/** Launches the system installer for a downloaded APK. The very first time this is used,
- * Android will ask the user to allow "install unknown apps" for this app — a one-time
- * permission that isn't needed again for future updates. */
+/** Launches the system installer for a downloaded APK using the proper APK installation intent.
+ * This uses ACTION_INSTALL_PACKAGE which is more reliable than ACTION_VIEW.
+ * First time this is used, Android will ask for "install unknown apps" permission. */
 private fun installDownloadedApk(context: Context, file: java.io.File) {
     val uri: Uri = FileProvider.getUriForFile(context, "com.ledger.simpleledger.fileprovider", file)
-    val intent = Intent(Intent.ACTION_VIEW).apply {
-        setDataAndType(uri, "application/vnd.android.package-archive")
+    val intent = Intent(Intent.ACTION_INSTALL_PACKAGE).apply {
+        data = uri
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
     }
     context.startActivity(intent)
