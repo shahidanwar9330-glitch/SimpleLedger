@@ -1,74 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res-android"
-    android:width="192dp"
-    android:height="192dp"
-    android:viewportWidth="192"
-    android:viewportHeight="192">
-    
-    <!-- Orange background -->
-    <path
-        android:fillColor="#E8620C"
-        android:pathData="M 0,0 L 192,0 L 192,192 L 0,192 Z" />
-    
-    <!-- Book pages - simplified -->
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Left page of open book -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M 40,50 L 96,40 L 96,140 L 40,150 Z" />
-    
+        android:pathData="M 22,28 L 54,22 L 54,80 L 22,86 Z" />
+
+    <!-- Right page (lighter) -->
     <path
         android:fillColor="#FFF6ED"
-        android:pathData="M 96,40 L 152,50 L 152,150 L 96,140 Z" />
-    
-    <!-- Spine -->
-    <line
-        android:strokeColor="#D4851F"
-        android:strokeWidth="6"
-        android:x1="96"
-        android:y1="40"
-        android:x2="96"
-        android:y2="140" />
-    
-    <!-- Ledger lines on right -->
-    <line
-        android:strokeColor="#E68C46"
-        android:strokeWidth="4"
-        android:x1="108"
-        android:y1="60"
-        android:x2="140"
-        android:y2="65" />
-    
-    <line
-        android:strokeColor="#E68C46"
-        android:strokeWidth="4"
-        android:x1="108"
-        android:y1="80"
-        android:x2="140"
-        android:y2="85" />
-    
-    <line
-        android:strokeColor="#E68C46"
-        android:strokeWidth="4"
-        android:x1="108"
-        android:y1="100"
-        android:x2="140"
-        android:y2="105" />
-    
-    <!-- Green badge with up arrow -->
-    <circle
-        android:cx="56"
-        android:cy="130"
-        android:r="18"
-        android:fillColor="#16A34A" />
-    
-    <!-- Arrow -->
+        android:pathData="M 54,22 L 86,28 L 86,86 L 54,80 Z" />
+
+    <!-- Spine, drawn as a thin filled rectangle path -->
+    <path
+        android:fillColor="#D4851F"
+        android:pathData="M 52.5,22 L 55.5,22 L 55.5,80 L 52.5,80 Z" />
+
+    <!-- Ledger line 1, as a thin filled rectangle -->
+    <path
+        android:fillColor="#E68C46"
+        android:pathData="M 60,36 L 80,38 L 80,40 L 60,38 Z" />
+
+    <!-- Ledger line 2 -->
+    <path
+        android:fillColor="#E68C46"
+        android:pathData="M 60,49 L 80,51 L 80,53 L 60,51 Z" />
+
+    <!-- Ledger line 3 -->
+    <path
+        android:fillColor="#E68C46"
+        android:pathData="M 60,62 L 80,64 L 80,66 L 60,64 Z" />
+
+    <!-- Green badge circle, drawn using two arcs -->
+    <path
+        android:fillColor="#16A34A"
+        android:pathData="M 18,74 a 10,10 0 1,0 20,0 a 10,10 0 1,0 -20,0 Z" />
+
+    <!-- Up-arrow triangle inside badge -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M 56,118 L 48,130 L 64,130 Z" />
-    
-    <rect
-        android:x="52"
-        android:y="130"
-        android:width="8"
-        android:height="12"
-        android:fillColor="#FFFFFF" />
+        android:pathData="M 28,69 L 23,77 L 33,77 Z" />
+
+    <!-- Arrow stem, as a thin filled rectangle -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 26,77 L 30,77 L 30,80 L 26,80 Z" />
 </vector>
