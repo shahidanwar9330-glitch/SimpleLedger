@@ -45,7 +45,7 @@ private fun iconFor(route: String) = when (route) {
 
 private fun labelFor(route: String) = when (route) {
     Screen.Dashboard.route -> "Home"
-    Screen.Transactions.route -> "Transactions"
+    Screen.Transactions.route -> "History"
     Screen.People.route -> "People"
     Screen.Reports.route -> "Reports"
     Screen.Settings.route -> "Settings"

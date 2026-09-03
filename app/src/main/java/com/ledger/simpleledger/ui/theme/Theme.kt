@@ -21,6 +21,13 @@ val LocalLedgerColors = staticCompositionLocalOf {
 
 private val LightScheme = lightColorScheme(
     primary = BrandPrimary,
+    onPrimary = LightOnPrimary,
+    primaryContainer = LightPrimaryContainer,
+    onPrimaryContainer = LightOnPrimaryContainer,
+    secondary = BrandPrimary,
+    onSecondary = LightOnPrimary,
+    secondaryContainer = LightPrimaryContainer,
+    onSecondaryContainer = LightOnPrimaryContainer,
     background = LightBackground,
     surface = LightSurface,
     surfaceVariant = LightSurfaceVariant,
@@ -31,6 +38,13 @@ private val LightScheme = lightColorScheme(
 
 private val DarkScheme = darkColorScheme(
     primary = BrandPrimaryDark,
+    onPrimary = DarkOnPrimary,
+    primaryContainer = DarkPrimaryContainer,
+    onPrimaryContainer = DarkOnPrimaryContainer,
+    secondary = BrandPrimaryDark,
+    onSecondary = DarkOnPrimary,
+    secondaryContainer = DarkPrimaryContainer,
+    onSecondaryContainer = DarkOnPrimaryContainer,
     background = DarkBackground,
     surface = DarkSurface,
     surfaceVariant = DarkSurfaceVariant,

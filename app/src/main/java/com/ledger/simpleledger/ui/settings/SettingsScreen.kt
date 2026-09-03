@@ -1,6 +1,10 @@
 package com.ledger.simpleledger.ui.settings
 
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import androidx.core.content.FileProvider
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -81,6 +85,77 @@ fun SettingsScreen() {
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)
         ) {
             item {
+                Text("App Update", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
+                        when (state.updateStatus) {
+                            UpdateCheckStatus.IDLE -> {
+                                Text(
+                                    "Installed build: ${if (state.installedBuild == 0) "first install" else "#${state.installedBuild}"}",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(Modifier.height(12.dp))
+                                Button(onClick = { viewModel.checkForUpdate() }, modifier = Modifier.fillMaxWidth()) {
+                                    Text("Check for Update")
+                                }
+                            }
+                            UpdateCheckStatus.CHECKING -> {
+                                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                    CircularProgressIndicator(modifier = Modifier.height(20.dp), strokeWidth = 2.dp)
+                                    Spacer(Modifier.width(12.dp))
+                                    Text("Checking for updates…")
+                                }
+                            }
+                            UpdateCheckStatus.UP_TO_DATE -> {
+                                Text("You're on the latest version.", color = MaterialTheme.colorScheme.primary)
+                                Spacer(Modifier.height(12.dp))
+                                OutlinedButton(onClick = { viewModel.checkForUpdate() }, modifier = Modifier.fillMaxWidth()) {
+                                    Text("Check Again")
+                                }
+                            }
+                            UpdateCheckStatus.AVAILABLE -> {
+                                if (state.downloadedApkFile != null) {
+                                    Text("Downloaded — tap to install", color = MaterialTheme.colorScheme.primary)
+                                    Spacer(Modifier.height(12.dp))
+                                    Button(
+                                        onClick = { installDownloadedApk(context, state.downloadedApkFile!!) },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) { Text("Install Update") }
+                                } else {
+                                    Text(
+                                        "Update available: ${state.latestUpdate?.releaseName ?: ""}",
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(Modifier.height(12.dp))
+                                    Button(
+                                        onClick = { viewModel.downloadUpdate(context) },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) { Text("Download & Install") }
+                                }
+                            }
+                            UpdateCheckStatus.DOWNLOADING -> {
+                                Text("Downloading update… ${(state.downloadProgress * 100).toInt()}%")
+                                Spacer(Modifier.height(8.dp))
+                                androidx.compose.material3.LinearProgressIndicator(
+                                    progress = { state.downloadProgress },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                            UpdateCheckStatus.ERROR -> {
+                                Text(state.updateError ?: "Something went wrong.", color = MaterialTheme.colorScheme.error)
+                                Spacer(Modifier.height(12.dp))
+                                Button(onClick = { viewModel.checkForUpdate() }, modifier = Modifier.fillMaxWidth()) {
+                                    Text("Try Again")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                Spacer(Modifier.height(20.dp))
                 Text("Backup & Restore", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(8.dp))
                 Card(Modifier.fillMaxWidth()) {
@@ -244,4 +319,16 @@ fun SettingsScreen() {
             }
         )
     }
+}
+
+/** Launches the system installer for a downloaded APK. The very first time this is used,
+ * Android will ask the user to allow "install unknown apps" for this app — a one-time
+ * permission that isn't needed again for future updates. */
+private fun installDownloadedApk(context: Context, file: java.io.File) {
+    val uri: Uri = FileProvider.getUriForFile(context, "com.ledger.simpleledger.fileprovider", file)
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(uri, "application/vnd.android.package-archive")
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+    }
+    context.startActivity(intent)
 }

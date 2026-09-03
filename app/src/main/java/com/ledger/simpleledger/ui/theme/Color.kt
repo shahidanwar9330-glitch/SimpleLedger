@@ -28,6 +28,16 @@ val DarkOnBackground = Color(0xFFF2EAE2)
 val DarkOnSurfaceMuted = Color(0xFFA89B8C)
 val DarkOutline = Color(0xFF332A21)
 
+// Full container roles so buttons, FAB, and nav-selection pills use the warm palette too
+// (Material3's defaults would otherwise fall back to a purple baseline for these roles).
+val LightOnPrimary = Color(0xFFFFFFFF)
+val LightPrimaryContainer = Color(0xFFFFE0CC)
+val LightOnPrimaryContainer = Color(0xFF5C2100)
+
+val DarkOnPrimary = Color(0xFF3D1400)
+val DarkPrimaryContainer = Color(0xFF5C2A0A)
+val DarkOnPrimaryContainer = Color(0xFFFFD9BA)
+
 // Deterministic palette used for person "initials" avatars — cycled by name hash.
 val AvatarPalette = listOf(
     Color(0xFFE8620C), // amber

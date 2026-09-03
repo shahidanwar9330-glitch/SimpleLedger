@@ -17,9 +17,16 @@ class SettingsPrefs(context: Context) {
         get() = prefs.getString(KEY_CURRENCY, "PKR") ?: "PKR"
         set(value) = prefs.edit().putString(KEY_CURRENCY, value).apply()
 
+    /** The GitHub release "build number" (from tag build-N) currently installed on this
+     * device. Defaults to 0 so the very first update check always finds something newer. */
+    var installedBuildNumber: Int
+        get() = prefs.getInt(KEY_INSTALLED_BUILD, 0)
+        set(value) = prefs.edit().putInt(KEY_INSTALLED_BUILD, value).apply()
+
     companion object {
         private const val KEY_LAST_BACKUP = "last_backup_at"
         private const val KEY_DARK_MODE = "dark_mode_override" // "system" | "light" | "dark"
         private const val KEY_CURRENCY = "default_currency"
+        private const val KEY_INSTALLED_BUILD = "installed_build_number"
     }
 }

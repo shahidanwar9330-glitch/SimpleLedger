@@ -9,11 +9,16 @@ import com.ledger.simpleledger.data.backup.BackupManager
 import com.ledger.simpleledger.data.backup.RestoreResult
 import com.ledger.simpleledger.data.db.entities.CategoryEntity
 import com.ledger.simpleledger.data.repository.LedgerRepository
+import com.ledger.simpleledger.update.UpdateChecker
+import com.ledger.simpleledger.update.UpdateInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.io.File
+
+enum class UpdateCheckStatus { IDLE, CHECKING, UP_TO_DATE, AVAILABLE, DOWNLOADING, ERROR }
 
 data class SettingsUiState(
     val lastBackupAt: Long = -1L,
@@ -21,7 +26,13 @@ data class SettingsUiState(
     val defaultCurrency: String = "PKR",
     val isWorking: Boolean = false,
     val message: String? = null,
-    val error: String? = null
+    val error: String? = null,
+    val installedBuild: Int = 0,
+    val updateStatus: UpdateCheckStatus = UpdateCheckStatus.IDLE,
+    val latestUpdate: UpdateInfo? = null,
+    val downloadProgress: Float = 0f,
+    val downloadedApkFile: File? = null,
+    val updateError: String? = null
 )
 
 class SettingsViewModel(
@@ -34,7 +45,8 @@ class SettingsViewModel(
         SettingsUiState(
             lastBackupAt = settingsPrefs.lastBackupAt,
             darkModeOverride = settingsPrefs.darkModeOverride,
-            defaultCurrency = settingsPrefs.defaultCurrency
+            defaultCurrency = settingsPrefs.defaultCurrency,
+            installedBuild = settingsPrefs.installedBuildNumber
         )
     )
     val state: StateFlow<SettingsUiState> = _state
@@ -90,6 +102,48 @@ class SettingsViewModel(
                 )
             } catch (e: Exception) {
                 _state.value = _state.value.copy(isWorking = false, error = e.message ?: "Restore failed")
+            }
+        }
+    }
+
+    fun checkForUpdate() {
+        _state.value = _state.value.copy(updateStatus = UpdateCheckStatus.CHECKING, updateError = null)
+        viewModelScope.launch {
+            val info = UpdateChecker.fetchLatest()
+            if (info == null) {
+                _state.value = _state.value.copy(
+                    updateStatus = UpdateCheckStatus.ERROR,
+                    updateError = "Couldn't check for updates. Check your internet connection."
+                )
+                return@launch
+            }
+            if (info.buildNumber > settingsPrefs.installedBuildNumber) {
+                _state.value = _state.value.copy(updateStatus = UpdateCheckStatus.AVAILABLE, latestUpdate = info)
+            } else {
+                _state.value = _state.value.copy(updateStatus = UpdateCheckStatus.UP_TO_DATE, latestUpdate = info)
+            }
+        }
+    }
+
+    fun downloadUpdate(context: Context) {
+        val info = _state.value.latestUpdate ?: return
+        _state.value = _state.value.copy(updateStatus = UpdateCheckStatus.DOWNLOADING, downloadProgress = 0f)
+        viewModelScope.launch {
+            val file = UpdateChecker.downloadApk(context, info.downloadUrl) { progress ->
+                _state.value = _state.value.copy(downloadProgress = progress)
+            }
+            if (file == null) {
+                _state.value = _state.value.copy(
+                    updateStatus = UpdateCheckStatus.ERROR,
+                    updateError = "Download failed. Please try again."
+                )
+            } else {
+                settingsPrefs.installedBuildNumber = info.buildNumber
+                _state.value = _state.value.copy(
+                    updateStatus = UpdateCheckStatus.AVAILABLE,
+                    downloadedApkFile = file,
+                    installedBuild = info.buildNumber
+                )
             }
         }
     }
