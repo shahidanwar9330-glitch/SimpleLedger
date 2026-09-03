@@ -2,4 +2,5 @@
 <paths>
     <external-files-path name="backups" path="backups/" />
     <cache-path name="cache" path="." />
+    <external-cache-path name="extcache" path="." />
 </paths>
