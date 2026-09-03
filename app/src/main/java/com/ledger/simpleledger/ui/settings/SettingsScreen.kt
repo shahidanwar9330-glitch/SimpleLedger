@@ -138,7 +138,7 @@ fun SettingsScreen() {
                                 Text("Downloading update… ${(state.downloadProgress * 100).toInt()}%")
                                 Spacer(Modifier.height(8.dp))
                                 androidx.compose.material3.LinearProgressIndicator(
-                                    progress = { state.downloadProgress },
+                                    progress = state.downloadProgress,
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
