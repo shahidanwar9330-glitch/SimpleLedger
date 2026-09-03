@@ -8,6 +8,15 @@ android {
     namespace = "com.ledger.simpleledger"
     compileSdk = 34
 
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.ledger.simpleledger"
         minSdk = 24
