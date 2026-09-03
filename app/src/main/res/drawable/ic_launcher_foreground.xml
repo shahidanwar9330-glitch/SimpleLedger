@@ -1,10 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.org/apk/res-android"
+<vector xmlns:android="http://schemas.android.com/apk/res-android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Left page of open ledger book -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M34,30 h40 v10 h-16 c8,0 14,6 14,14 c0,8 -6,14 -14,14 h-10 l22,22 h-14 l-22,-22 v-10 h20 c4,0 8,-4 8,-8 c0,-4 -4,-8 -8,-8 h-20 z" />
+        android:pathData="M 20,28 L 54,20 L 54,80 L 20,88 Z" />
+    <!-- Right page (lighter) -->
+    <path
+        android:fillColor="#FFF6ED"
+        android:pathData="M 54,20 L 88,28 L 88,88 L 54,80 Z" />
+    <!-- Spine line -->
+    <line
+        android:strokeColor="#E68C46"
+        android:strokeWidth="3"
+        android:x1="54"
+        android:y1="20"
+        android:x2="54"
+        android:y2="80" />
+    <!-- Ledger line 1 -->
+    <line
+        android:strokeColor="#E68C46"
+        android:strokeWidth="2.5"
+        android:x1="60"
+        android:y1="35"
+        android:x2="82"
+        android:y2="38" />
+    <!-- Ledger line 2 -->
+    <line
+        android:strokeColor="#E68C46"
+        android:strokeWidth="2.5"
+        android:x1="60"
+        android:y1="48"
+        android:x2="82"
+        android:y2="51" />
+    <!-- Ledger line 3 -->
+    <line
+        android:strokeColor="#E68C46"
+        android:strokeWidth="2.5"
+        android:x1="60"
+        android:y1="61"
+        android:x2="82"
+        android:y2="64" />
+    <!-- Green up-arrow badge -->
+    <circle
+        android:cx="28"
+        android:cy="75"
+        android:r="10"
+        android:fillColor="#16A34A" />
+    <!-- Arrow shape inside badge -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 28,72 L 25,77 L 31,77 Z" />
+    <rect
+        android:x="26.5"
+        android:y="76.5"
+        android:width="3"
+        android:height="5"
+        android:fillColor="#FFFFFF" />
 </vector>
