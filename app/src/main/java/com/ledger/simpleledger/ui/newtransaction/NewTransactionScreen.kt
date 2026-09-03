@@ -58,13 +58,14 @@ import com.ledger.simpleledger.util.DateUtils
 fun NewTransactionScreen(
     initialType: String?,
     editId: Long?,
+    personId: Long? = null,
     onBack: () -> Unit,
     onSaved: () -> Unit
 ) {
     val app = currentLedgerApp()
     val viewModel: NewTransactionViewModel = viewModel(
         factory = SimpleViewModelFactory {
-            NewTransactionViewModel(app.repository, app.settingsPrefs, initialType, editId)
+            NewTransactionViewModel(app.repository, app.settingsPrefs, initialType, editId, personId)
         }
     )
     val state by viewModel.state.collectAsStateWithLifecycle()

@@ -117,14 +117,17 @@ fun SimpleLedgerNavGraph() {
                 route = Screen.NewTransaction.route,
                 arguments = listOf(
                     navArgument("type") { type = NavType.StringType; nullable = true; defaultValue = null },
-                    navArgument("editId") { type = NavType.StringType; nullable = true; defaultValue = null }
+                    navArgument("editId") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("personId") { type = NavType.StringType; nullable = true; defaultValue = null }
                 )
             ) { backStackEntry ->
                 val type = backStackEntry.arguments?.getString("type")?.ifBlank { null }
                 val editId = backStackEntry.arguments?.getString("editId")?.ifBlank { null }?.toLongOrNull()
+                val personId = backStackEntry.arguments?.getString("personId")?.ifBlank { null }?.toLongOrNull()
                 NewTransactionScreen(
                     initialType = type,
                     editId = editId,
+                    personId = personId,
                     onBack = { navController.popBackStack() },
                     onSaved = { navController.popBackStack() }
                 )
@@ -153,6 +156,9 @@ fun SimpleLedgerNavGraph() {
                     onBack = { navController.popBackStack() },
                     onOpenTransaction = { txId -> navController.navigate(Screen.TransactionDetail.build(txId)) },
                     onEditPerson = { pid -> navController.navigate(Screen.AddEditPerson.build(pid)) },
+                    onNewTransactionForPerson = { type, pid ->
+                        navController.navigate(Screen.NewTransaction.build(type = type, personId = pid))
+                    },
                     onDeleted = { navController.popBackStack() }
                 )
             }

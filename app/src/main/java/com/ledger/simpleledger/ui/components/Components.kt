@@ -34,8 +34,27 @@ import androidx.compose.ui.unit.dp
 import com.ledger.simpleledger.data.db.dao.TransactionWithPerson
 import com.ledger.simpleledger.data.model.TransactionType
 import com.ledger.simpleledger.ui.theme.LocalLedgerColors
+import com.ledger.simpleledger.util.AvatarUtil
 import com.ledger.simpleledger.util.DateUtils
 import com.ledger.simpleledger.util.Money
+
+@Composable
+fun PersonAvatar(name: String, size: androidx.compose.ui.unit.Dp = 44.dp, modifier: Modifier = Modifier) {
+    val color = AvatarUtil.colorFor(name)
+    Box(
+        modifier
+            .size(size)
+            .background(color.copy(alpha = 0.22f), CircleShape),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            AvatarUtil.initialsFor(name),
+            color = color,
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.labelLarge
+        )
+    }
+}
 
 @Composable
 fun SummaryCard(

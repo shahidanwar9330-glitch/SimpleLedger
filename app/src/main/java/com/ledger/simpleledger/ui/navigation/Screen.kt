@@ -7,11 +7,12 @@ sealed class Screen(val route: String) {
     object Reports : Screen("reports")
     object Settings : Screen("settings")
 
-    object NewTransaction : Screen("new_transaction?type={type}&editId={editId}") {
-        fun build(type: String? = null, editId: Long? = null): String {
+    object NewTransaction : Screen("new_transaction?type={type}&editId={editId}&personId={personId}") {
+        fun build(type: String? = null, editId: Long? = null, personId: Long? = null): String {
             val t = type ?: ""
             val e = editId?.toString() ?: ""
-            return "new_transaction?type=$t&editId=$e"
+            val p = personId?.toString() ?: ""
+            return "new_transaction?type=$t&editId=$e&personId=$p"
         }
     }
 

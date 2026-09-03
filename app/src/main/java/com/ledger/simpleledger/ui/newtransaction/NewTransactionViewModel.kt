@@ -39,14 +39,16 @@ class NewTransactionViewModel(
     private val repository: LedgerRepository,
     settingsPrefs: SettingsPrefs,
     initialType: String?,
-    initialEditId: Long?
+    initialEditId: Long?,
+    initialPersonId: Long?
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
         NewTransactionUiState(
             editId = initialEditId,
             type = initialType?.let { runCatching { TransactionType.valueOf(it) }.getOrNull() } ?: TransactionType.LIYA,
-            currency = settingsPrefs.defaultCurrency
+            currency = settingsPrefs.defaultCurrency,
+            selectedPersonId = initialPersonId
         )
     )
     val state: StateFlow<NewTransactionUiState> = _state
@@ -55,6 +57,13 @@ class NewTransactionViewModel(
         viewModelScope.launch {
             repository.observePeople().collect { people ->
                 _state.value = _state.value.copy(people = people)
+                // If we were opened with a personId (e.g. from Person Detail's Maine
+                // Liya/Diya buttons), fill in their name once we have the people list.
+                if (initialPersonId != null && _state.value.selectedPersonName.isBlank()) {
+                    people.firstOrNull { it.id == initialPersonId }?.let { p ->
+                        _state.value = _state.value.copy(selectedPersonName = p.name)
+                    }
+                }
             }
         }
         viewModelScope.launch {
