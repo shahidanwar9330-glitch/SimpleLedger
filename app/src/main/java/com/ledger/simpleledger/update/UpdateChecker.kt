@@ -1,6 +1,7 @@
 package com.ledger.simpleledger.update
 
 import android.content.Context
+import android.os.Environment
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -53,8 +54,9 @@ object UpdateChecker {
         }
     }
 
-    /** Downloads the APK into the app's cache dir, reporting progress from 0f to 1f.
-     * Returns the downloaded file, or null on failure. */
+    /** Downloads the APK into the public Downloads directory, reporting progress from 0f to 1f.
+     * Returns the downloaded file, or null on failure.
+     * The Downloads directory is globally readable by the package installer. */
     suspend fun downloadApk(
         context: Context,
         url: String,
@@ -67,7 +69,12 @@ object UpdateChecker {
             connection.readTimeout = 30000
             connection.connect()
             val total = connection.contentLength
-            val outFile = File(context.cacheDir, "update.apk")
+            
+            // Use public Downloads directory for better installer compatibility
+            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            if (!downloadsDir.exists()) downloadsDir.mkdirs()
+            val outFile = File(downloadsDir, "SimpleLedger_update.apk")
+            
             connection.inputStream.use { input ->
                 outFile.outputStream().use { output ->
                     val buffer = ByteArray(8192)
