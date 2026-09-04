@@ -60,7 +60,12 @@ object DriveBackupManager {
                 DriveBackupResult.Error("Drive rejected the upload (code $code)")
             }
         } catch (e: UserRecoverableAuthException) {
-            DriveBackupResult.NeedsConsent(e.intent)
+            val consentIntent = e.intent
+            if (consentIntent != null) {
+                DriveBackupResult.NeedsConsent(consentIntent)
+            } else {
+                DriveBackupResult.Error(e.message ?: "Needs additional permission")
+            }
         } catch (e: Exception) {
             DriveBackupResult.Error(e.message ?: e.javaClass.simpleName)
         }
