@@ -97,6 +97,15 @@ fun SettingsScreen() {
         viewModel.refreshDriveAccount(context)
     }
 
+    val driveConsentLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        viewModel.clearDriveConsentIntent()
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            viewModel.backupToDriveNow(context)
+        }
+    }
+
     Scaffold(
         topBar = { TopAppBar(title = { Text("Settings") }) }
     ) { padding ->
@@ -251,8 +260,18 @@ fun SettingsScreen() {
                                     }
                                 }
                                 DriveBackupStatus.ERROR -> {
-                                    Text("Backup failed. Check your internet connection.", color = MaterialTheme.colorScheme.error)
+                                    Text(
+                                        state.driveError ?: "Backup failed.",
+                                        color = MaterialTheme.colorScheme.error
+                                    )
                                     Spacer(Modifier.height(8.dp))
+                                    if (state.driveConsentIntent != null) {
+                                        Button(
+                                            onClick = { driveConsentLauncher.launch(state.driveConsentIntent!!) },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) { Text("Allow Drive Access") }
+                                        Spacer(Modifier.height(8.dp))
+                                    }
                                 }
                                 else -> {}
                             }

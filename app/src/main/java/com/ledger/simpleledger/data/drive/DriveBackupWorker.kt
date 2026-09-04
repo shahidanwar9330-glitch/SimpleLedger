@@ -25,11 +25,14 @@ class DriveBackupWorker(
         val account = DriveBackupManager.lastSignedInAccount(applicationContext) ?: return Result.success()
         val app = applicationContext as SimpleLedgerApp
         val jsonBytes = app.backupManager.buildBackupJson()
-        val ok = DriveBackupManager.backupNow(applicationContext, jsonBytes)
-        if (ok) {
-            SettingsPrefs(applicationContext).lastDriveBackupAt = System.currentTimeMillis()
+        val result = DriveBackupManager.backupNow(applicationContext, jsonBytes)
+        return when (result) {
+            is DriveBackupResult.Success -> {
+                SettingsPrefs(applicationContext).lastDriveBackupAt = System.currentTimeMillis()
+                Result.success()
+            }
+            else -> Result.retry()
         }
-        return if (ok) Result.success() else Result.retry()
     }
 
     companion object {

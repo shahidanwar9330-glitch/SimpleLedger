@@ -38,7 +38,9 @@ data class SettingsUiState(
     val updateError: String? = null,
     val driveAccountEmail: String? = null,
     val lastDriveBackupAt: Long = -1L,
-    val driveStatus: DriveBackupStatus = DriveBackupStatus.IDLE
+    val driveStatus: DriveBackupStatus = DriveBackupStatus.IDLE,
+    val driveConsentIntent: android.content.Intent? = null,
+    val driveError: String? = null
 )
 
 class SettingsViewModel(
@@ -78,18 +80,31 @@ class SettingsViewModel(
     }
 
     fun backupToDriveNow(context: Context) {
-        _state.value = _state.value.copy(driveStatus = DriveBackupStatus.BACKING_UP)
+        _state.value = _state.value.copy(driveStatus = DriveBackupStatus.BACKING_UP, driveError = null, driveConsentIntent = null)
         viewModelScope.launch {
             val jsonBytes = backupManager.buildBackupJson()
-            val ok = DriveBackupManager.backupNow(context, jsonBytes)
-            if (ok) {
-                val now = System.currentTimeMillis()
-                settingsPrefs.lastDriveBackupAt = now
-                _state.value = _state.value.copy(driveStatus = DriveBackupStatus.SUCCESS, lastDriveBackupAt = now)
-            } else {
-                _state.value = _state.value.copy(driveStatus = DriveBackupStatus.ERROR)
+            when (val result = DriveBackupManager.backupNow(context, jsonBytes)) {
+                is com.ledger.simpleledger.data.drive.DriveBackupResult.Success -> {
+                    val now = System.currentTimeMillis()
+                    settingsPrefs.lastDriveBackupAt = now
+                    _state.value = _state.value.copy(driveStatus = DriveBackupStatus.SUCCESS, lastDriveBackupAt = now)
+                }
+                is com.ledger.simpleledger.data.drive.DriveBackupResult.NeedsConsent -> {
+                    _state.value = _state.value.copy(
+                        driveStatus = DriveBackupStatus.ERROR,
+                        driveConsentIntent = result.intent,
+                        driveError = "One more permission needed — tap below to allow Drive access."
+                    )
+                }
+                is com.ledger.simpleledger.data.drive.DriveBackupResult.Error -> {
+                    _state.value = _state.value.copy(driveStatus = DriveBackupStatus.ERROR, driveError = result.message)
+                }
             }
         }
+    }
+
+    fun clearDriveConsentIntent() {
+        _state.value = _state.value.copy(driveConsentIntent = null)
     }
 
     val categories = repository.observeCategories()

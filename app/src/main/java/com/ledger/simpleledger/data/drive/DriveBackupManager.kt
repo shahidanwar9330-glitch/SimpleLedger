@@ -1,7 +1,9 @@
 package com.ledger.simpleledger.data.drive
 
 import android.content.Context
+import android.content.Intent
 import com.google.android.gms.auth.GoogleAuthUtil
+import com.google.android.gms.auth.UserRecoverableAuthException
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -14,6 +16,12 @@ import java.net.URL
 
 private const val DRIVE_SCOPE = "oauth2:https://www.googleapis.com/auth/drive.file"
 private const val BACKUP_FILE_NAME = "KhataBook_backup.json"
+
+sealed class DriveBackupResult {
+    object Success : DriveBackupResult()
+    data class NeedsConsent(val intent: Intent) : DriveBackupResult()
+    data class Error(val message: String) : DriveBackupResult()
+}
 
 /**
  * Handles connecting the user's Google account (per-file Drive access only — this app can
@@ -33,21 +41,28 @@ object DriveBackupManager {
     fun lastSignedInAccount(context: Context): GoogleSignInAccount? =
         GoogleSignIn.getLastSignedInAccount(context)
 
-    /** Uploads (or updates) the backup file in the user's Drive. Returns true on success. */
-    suspend fun backupNow(context: Context, jsonBytes: ByteArray): Boolean = withContext(Dispatchers.IO) {
+    /** Uploads (or updates) the backup file in the user's Drive. */
+    suspend fun backupNow(context: Context, jsonBytes: ByteArray): DriveBackupResult = withContext(Dispatchers.IO) {
         try {
-            val account = lastSignedInAccount(context) ?: return@withContext false
+            val account = lastSignedInAccount(context)
+                ?: return@withContext DriveBackupResult.Error("Not signed in to Google")
             val token = GoogleAuthUtil.getToken(context, account.account!!, DRIVE_SCOPE)
 
             val existingFileId = findExistingFileId(token)
-            if (existingFileId != null) {
+            val code = if (existingFileId != null) {
                 updateFile(token, existingFileId, jsonBytes)
             } else {
                 createFile(token, jsonBytes)
             }
-            true
+            if (code in 200..299) {
+                DriveBackupResult.Success
+            } else {
+                DriveBackupResult.Error("Drive rejected the upload (code $code)")
+            }
+        } catch (e: UserRecoverableAuthException) {
+            DriveBackupResult.NeedsConsent(e.intent)
         } catch (e: Exception) {
-            false
+            DriveBackupResult.Error(e.message ?: e.javaClass.simpleName)
         }
     }
 
@@ -68,7 +83,7 @@ object DriveBackupManager {
         return files.getJSONObject(0).optString("id")
     }
 
-    private fun createFile(token: String, jsonBytes: ByteArray) {
+    private fun createFile(token: String, jsonBytes: ByteArray): Int {
         val boundary = "khatabook_backup_boundary"
         val metadata = JSONObject().apply {
             put("name", BACKUP_FILE_NAME)
@@ -85,11 +100,12 @@ object DriveBackupManager {
         connection.connectTimeout = 15000
         connection.readTimeout = 20000
         connection.outputStream.use { it.write(body) }
-        connection.responseCode // triggers the request
+        val code = connection.responseCode
         connection.disconnect()
+        return code
     }
 
-    private fun updateFile(token: String, fileId: String, jsonBytes: ByteArray) {
+    private fun updateFile(token: String, fileId: String, jsonBytes: ByteArray): Int {
         val url = URL("https://www.googleapis.com/upload/drive/v3/files/$fileId?uploadType=media")
         val connection = url.openConnection() as HttpURLConnection
         connection.requestMethod = "PATCH"
@@ -99,8 +115,9 @@ object DriveBackupManager {
         connection.connectTimeout = 15000
         connection.readTimeout = 20000
         connection.outputStream.use { it.write(jsonBytes) }
-        connection.responseCode
+        val code = connection.responseCode
         connection.disconnect()
+        return code
     }
 
     private fun buildMultipartBody(boundary: String, metadataJson: String, fileBytes: ByteArray): ByteArray {
