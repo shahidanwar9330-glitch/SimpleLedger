@@ -38,6 +38,20 @@ class BackupManager(private val repository: LedgerRepository) {
 
     private val gson = GsonBuilder().setPrettyPrinting().create()
 
+    /** Builds the same backup payload used for local export, as raw JSON bytes —
+     * used for uploading directly to Google Drive without going through a file Uri. */
+    suspend fun buildBackupJson(): ByteArray {
+        val people = repository.getAllPeopleRaw()
+        val categories = repository.getAllCategoriesRaw()
+        val transactions = repository.getAllTransactionsRaw()
+        val payload = BackupPayload(
+            people = people,
+            categories = categories,
+            transactions = transactions
+        )
+        return gson.toJson(payload).toByteArray(Charsets.UTF_8)
+    }
+
     suspend fun exportTo(context: Context, uri: Uri): RestoreResult {
         val people = repository.getAllPeopleRaw()
         val categories = repository.getAllCategoriesRaw()

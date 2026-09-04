@@ -23,10 +23,15 @@ class SettingsPrefs(context: Context) {
         get() = prefs.getInt(KEY_INSTALLED_BUILD, 0)
         set(value) = prefs.edit().putInt(KEY_INSTALLED_BUILD, value).apply()
 
+    var lastDriveBackupAt: Long
+        get() = prefs.getLong(KEY_LAST_DRIVE_BACKUP, -1L)
+        set(value) = prefs.edit().putLong(KEY_LAST_DRIVE_BACKUP, value).apply()
+
     companion object {
         private const val KEY_LAST_BACKUP = "last_backup_at"
         private const val KEY_DARK_MODE = "dark_mode_override" // "system" | "light" | "dark"
         private const val KEY_CURRENCY = "default_currency"
         private const val KEY_INSTALLED_BUILD = "installed_build_number"
+        private const val KEY_LAST_DRIVE_BACKUP = "last_drive_backup_at"
     }
 }

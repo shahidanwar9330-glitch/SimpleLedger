@@ -29,5 +29,8 @@ class SimpleLedgerApp : Application() {
         applicationScope.launch {
             repository.ensureDefaultCategoriesSeeded()
         }
+        if (com.ledger.simpleledger.data.drive.DriveBackupManager.lastSignedInAccount(this) != null) {
+            com.ledger.simpleledger.data.drive.DriveBackupWorker.schedule(this)
+        }
     }
 }

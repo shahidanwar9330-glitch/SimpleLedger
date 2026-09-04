@@ -8,6 +8,8 @@ import com.ledger.simpleledger.data.SettingsPrefs
 import com.ledger.simpleledger.data.backup.BackupManager
 import com.ledger.simpleledger.data.backup.RestoreResult
 import com.ledger.simpleledger.data.db.entities.CategoryEntity
+import com.ledger.simpleledger.data.drive.DriveBackupManager
+import com.ledger.simpleledger.data.drive.DriveBackupWorker
 import com.ledger.simpleledger.data.repository.LedgerRepository
 import com.ledger.simpleledger.update.UpdateChecker
 import com.ledger.simpleledger.update.UpdateInfo
@@ -19,6 +21,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 enum class UpdateCheckStatus { IDLE, CHECKING, UP_TO_DATE, AVAILABLE, DOWNLOADING, ERROR }
+enum class DriveBackupStatus { IDLE, BACKING_UP, SUCCESS, ERROR }
 
 data class SettingsUiState(
     val lastBackupAt: Long = -1L,
@@ -32,7 +35,10 @@ data class SettingsUiState(
     val latestUpdate: UpdateInfo? = null,
     val downloadProgress: Float = 0f,
     val downloadedApkFile: File? = null,
-    val updateError: String? = null
+    val updateError: String? = null,
+    val driveAccountEmail: String? = null,
+    val lastDriveBackupAt: Long = -1L,
+    val driveStatus: DriveBackupStatus = DriveBackupStatus.IDLE
 )
 
 class SettingsViewModel(
@@ -46,10 +52,45 @@ class SettingsViewModel(
             lastBackupAt = settingsPrefs.lastBackupAt,
             darkModeOverride = settingsPrefs.darkModeOverride,
             defaultCurrency = settingsPrefs.defaultCurrency,
-            installedBuild = settingsPrefs.installedBuildNumber
+            installedBuild = settingsPrefs.installedBuildNumber,
+            lastDriveBackupAt = settingsPrefs.lastDriveBackupAt
         )
     )
     val state: StateFlow<SettingsUiState> = _state
+
+    fun refreshDriveAccount(context: Context) {
+        val account = DriveBackupManager.lastSignedInAccount(context)
+        _state.value = _state.value.copy(driveAccountEmail = account?.email)
+    }
+
+    fun onDriveSignInResult(context: Context, account: com.google.android.gms.auth.api.signin.GoogleSignInAccount?) {
+        _state.value = _state.value.copy(driveAccountEmail = account?.email)
+        if (account != null) {
+            DriveBackupWorker.schedule(context)
+            backupToDriveNow(context)
+        }
+    }
+
+    fun disconnectDrive(context: Context) {
+        DriveBackupManager.signInClient(context).signOut()
+        DriveBackupWorker.cancel(context)
+        _state.value = _state.value.copy(driveAccountEmail = null, driveStatus = DriveBackupStatus.IDLE)
+    }
+
+    fun backupToDriveNow(context: Context) {
+        _state.value = _state.value.copy(driveStatus = DriveBackupStatus.BACKING_UP)
+        viewModelScope.launch {
+            val jsonBytes = backupManager.buildBackupJson()
+            val ok = DriveBackupManager.backupNow(context, jsonBytes)
+            if (ok) {
+                val now = System.currentTimeMillis()
+                settingsPrefs.lastDriveBackupAt = now
+                _state.value = _state.value.copy(driveStatus = DriveBackupStatus.SUCCESS, lastDriveBackupAt = now)
+            } else {
+                _state.value = _state.value.copy(driveStatus = DriveBackupStatus.ERROR)
+            }
+        }
+    }
 
     val categories = repository.observeCategories()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

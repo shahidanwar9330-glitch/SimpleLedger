@@ -37,6 +37,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -46,6 +47,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.common.api.ApiException
+import com.ledger.simpleledger.data.drive.DriveBackupManager
 import com.ledger.simpleledger.ui.SimpleViewModelFactory
 import com.ledger.simpleledger.ui.components.ConfirmDialog
 import com.ledger.simpleledger.ui.currentLedgerApp
@@ -75,6 +79,22 @@ fun SettingsScreen() {
             pendingRestoreUri = uri
             showRestoreConfirm = true
         }
+    }
+
+    val driveSignInLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            viewModel.onDriveSignInResult(context, account)
+        } catch (e: ApiException) {
+            viewModel.onDriveSignInResult(context, null)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.refreshDriveAccount(context)
     }
 
     Scaffold(
@@ -191,6 +211,65 @@ fun SettingsScreen() {
                         state.error?.let {
                             Spacer(Modifier.height(8.dp))
                             Text(it, color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                }
+            }
+
+            item {
+                Spacer(Modifier.height(20.dp))
+                Text("Cloud Backup (Google Drive)", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
+                        if (state.driveAccountEmail == null) {
+                            Text(
+                                "Connect your Google account to automatically back up every week.",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            Button(
+                                onClick = { driveSignInLauncher.launch(DriveBackupManager.signInClient(context).signInIntent) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text("Connect Google Drive") }
+                        } else {
+                            Text("Connected: ${state.driveAccountEmail}", color = MaterialTheme.colorScheme.primary)
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                if (state.lastDriveBackupAt > 0)
+                                    "Last Drive backup: ${DateUtils.formatFullWithTime(state.lastDriveBackupAt)}"
+                                else "Last Drive backup: Never",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.height(12.dp))
+                            when (state.driveStatus) {
+                                DriveBackupStatus.BACKING_UP -> {
+                                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                        CircularProgressIndicator(modifier = Modifier.height(20.dp), strokeWidth = 2.dp)
+                                        Spacer(Modifier.width(12.dp))
+                                        Text("Backing up to Drive…")
+                                    }
+                                }
+                                DriveBackupStatus.ERROR -> {
+                                    Text("Backup failed. Check your internet connection.", color = MaterialTheme.colorScheme.error)
+                                    Spacer(Modifier.height(8.dp))
+                                }
+                                else -> {}
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Button(onClick = { viewModel.backupToDriveNow(context) }) {
+                                    Text("Backup Now")
+                                }
+                                OutlinedButton(onClick = { viewModel.disconnectDrive(context) }) {
+                                    Text("Disconnect")
+                                }
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                "Backs up automatically once every week, as long as you have internet.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }
