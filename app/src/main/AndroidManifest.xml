@@ -7,8 +7,9 @@
     <application
         android:name=".SimpleLedgerApp"
         android:allowBackup="true"
-        android:label="Simple Ledger"
+        android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.SimpleLedger"
         android:supportsRtl="true">
 
