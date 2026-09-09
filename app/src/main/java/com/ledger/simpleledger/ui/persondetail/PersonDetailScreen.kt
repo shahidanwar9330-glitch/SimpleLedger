@@ -205,8 +205,20 @@ fun PersonDetailScreen(
             } else {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
                     Text("Entries", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                    Text("Maine Diya", style = MaterialTheme.typography.labelMedium, color = colors.diya, modifier = Modifier.weight(1f))
-                    Text("Maine Liya", style = MaterialTheme.typography.labelMedium, color = colors.liya, modifier = Modifier.weight(1f))
+                    Text(
+                        "Maine Diya",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = colors.diya,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        "Maine Liya",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = colors.liya,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
                 LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp)) {
                     items(state.transactions, key = { it.transaction.id }) { row ->
@@ -227,12 +239,12 @@ fun PersonDetailScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+                            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                                 if (!isLiya) {
                                     AmountPill(Money.format(t.amountMinor, t.currency), colors.diya)
                                 }
                             }
-                            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+                            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                                 if (isLiya) {
                                     AmountPill(Money.format(t.amountMinor, t.currency), colors.liya)
                                 }
