@@ -16,7 +16,7 @@ data class PeopleTotalsUiState(
     val totalDiyaMinor: Long = 0,
     val currency: String = "PKR"
 ) {
-    val balanceMinor: Long get() = totalLiyaMinor - totalDiyaMinor
+    val balanceMinor: Long get() = totalDiyaMinor - totalLiyaMinor
 }
 
 class PeopleViewModel(

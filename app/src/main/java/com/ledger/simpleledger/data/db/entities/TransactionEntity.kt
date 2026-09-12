@@ -37,6 +37,7 @@ data class TransactionEntity(
     val paymentMethod: String? = null,
     val reference: String? = null,
     val attachmentUri: String? = null,
+    val voiceNotePath: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )

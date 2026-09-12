@@ -1,14 +1,24 @@
 package com.ledger.simpleledger.ui.newtransaction
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.media.MediaPlayer
+import android.media.MediaRecorder
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,6 +26,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -30,6 +47,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -37,21 +55,31 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.ledger.simpleledger.data.model.TransactionType
 import com.ledger.simpleledger.ui.SimpleViewModelFactory
 import com.ledger.simpleledger.ui.currentLedgerApp
 import com.ledger.simpleledger.ui.theme.LocalLedgerColors
+import com.ledger.simpleledger.util.AttachmentStorage
 import com.ledger.simpleledger.util.DateUtils
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,10 +98,95 @@ fun NewTransactionScreen(
     )
     val state by viewModel.state.collectAsStateWithLifecycle()
     val colors = LocalLedgerColors.current
+    val context = LocalContext.current
 
     var personMenuExpanded by remember { mutableStateOf(false) }
     var categoryMenuExpanded by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
+
+    var isRecording by remember { mutableStateOf(false) }
+    var isPlaying by remember { mutableStateOf(false) }
+    var recorder by remember { mutableStateOf<MediaRecorder?>(null) }
+    var player by remember { mutableStateOf<MediaPlayer?>(null) }
+    var pendingRecordingFile by remember { mutableStateOf<File?>(null) }
+
+    fun startRecording() {
+        val file = AttachmentStorage.newVoiceNoteFile(context)
+        pendingRecordingFile = file
+        val rec = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            MediaRecorder(context)
+        } else {
+            @Suppress("DEPRECATION")
+            MediaRecorder()
+        }
+        try {
+            rec.apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                setOutputFile(file.absolutePath)
+                prepare()
+                start()
+            }
+            recorder = rec
+            isRecording = true
+        } catch (e: Exception) {
+            isRecording = false
+        }
+    }
+
+    fun stopRecording() {
+        try {
+            recorder?.stop()
+        } catch (e: Exception) {
+            // Very short recordings can throw on stop(); the partial file is discarded below.
+        }
+        recorder?.release()
+        recorder = null
+        isRecording = false
+        val file = pendingRecordingFile
+        if (file != null && file.exists() && file.length() > 0) {
+            viewModel.setVoiceNote(file.absolutePath)
+        }
+        pendingRecordingFile = null
+    }
+
+    fun togglePlayback() {
+        val path = state.voiceNotePath ?: return
+        if (isPlaying) {
+            player?.pause()
+            isPlaying = false
+        } else {
+            if (player == null) {
+                player = MediaPlayer().apply {
+                    setDataSource(path)
+                    prepare()
+                    setOnCompletionListener { isPlaying = false }
+                }
+            }
+            player?.start()
+            isPlaying = true
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            recorder?.release()
+            player?.release()
+        }
+    }
+
+    val audioPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted -> if (granted) startRecording() }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            AttachmentStorage.copyImage(context, uri)?.let { path -> viewModel.setAttachment(path) }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -239,23 +352,90 @@ fun NewTransactionScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(Modifier.height(12.dp))
-            Text("Optional details", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(16.dp))
+            Text("Attach (optional)", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(8.dp))
 
-            OutlinedTextField(
-                value = state.paymentMethod,
-                onValueChange = viewModel::setPaymentMethod,
-                label = { Text("Payment method (e.g. Cash, Bank, EasyPaisa)") },
-                modifier = Modifier.fillMaxWidth()
-            )
+            if (state.attachmentUri != null) {
+                Box(Modifier.fillMaxWidth()) {
+                    AsyncImage(
+                        model = state.attachmentUri,
+                        contentDescription = "Attached image",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(160.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                    )
+                    IconButton(
+                        onClick = { viewModel.setAttachment(null) },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(4.dp)
+                            .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(50))
+                    ) {
+                        Icon(Icons.Filled.Close, contentDescription = "Remove image", tint = Color.White)
+                    }
+                }
+            } else {
+                OutlinedButton(
+                    onClick = {
+                        imagePickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Filled.Image, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Attach Image")
+                }
+            }
+
             Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
-                value = state.reference,
-                onValueChange = viewModel::setReference,
-                label = { Text("Reference number") },
-                modifier = Modifier.fillMaxWidth()
-            )
+
+            if (state.voiceNotePath != null) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { togglePlayback() }) {
+                        Icon(
+                            if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                            contentDescription = if (isPlaying) "Pause voice note" else "Play voice note"
+                        )
+                    }
+                    Text("Voice note", modifier = Modifier.weight(1f))
+                    IconButton(onClick = {
+                        player?.release()
+                        player = null
+                        isPlaying = false
+                        AttachmentStorage.deleteIfExists(state.voiceNotePath)
+                        viewModel.setVoiceNote(null)
+                    }) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Remove voice note")
+                    }
+                }
+            } else {
+                OutlinedButton(
+                    onClick = {
+                        if (isRecording) {
+                            stopRecording()
+                        } else {
+                            val hasPermission = ContextCompat.checkSelfPermission(
+                                context, Manifest.permission.RECORD_AUDIO
+                            ) == PackageManager.PERMISSION_GRANTED
+                            if (hasPermission) startRecording()
+                            else audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(if (isRecording) Icons.Filled.Stop else Icons.Filled.Mic, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(if (isRecording) "Stop Recording" else "Record Voice Note")
+                }
+            }
 
             Spacer(Modifier.height(24.dp))
 

@@ -17,7 +17,9 @@ data class PersonWithTotals(
     val totalLiyaMinor: Long,
     val totalDiyaMinor: Long
 ) {
-    val balanceMinor: Long get() = totalLiyaMinor - totalDiyaMinor
+    // Positive balance = they owe you (you gave more than you received) = "You'll get"
+    // Negative balance = you owe them (you received more than you gave) = "You'll give"
+    val balanceMinor: Long get() = totalDiyaMinor - totalLiyaMinor
 }
 
 @Dao

@@ -1,5 +1,6 @@
 package com.ledger.simpleledger.ui.transactiondetail
 
+import android.media.MediaPlayer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,10 +9,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -25,16 +29,20 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.ledger.simpleledger.data.model.TransactionType
 import com.ledger.simpleledger.ui.SimpleViewModelFactory
 import com.ledger.simpleledger.ui.components.ConfirmDialog
@@ -115,6 +123,52 @@ fun TransactionDetailScreen(
             if (!t.note.isNullOrBlank()) DetailRow("Note", t.note)
             if (!t.paymentMethod.isNullOrBlank()) DetailRow("Payment Method", t.paymentMethod)
             if (!t.reference.isNullOrBlank()) DetailRow("Reference", t.reference)
+
+            if (!t.attachmentUri.isNullOrBlank()) {
+                Spacer(Modifier.height(12.dp))
+                AsyncImage(
+                    model = t.attachmentUri,
+                    contentDescription = "Attached image",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                )
+            }
+
+            if (!t.voiceNotePath.isNullOrBlank()) {
+                Spacer(Modifier.height(12.dp))
+                var isPlaying by remember { mutableStateOf(false) }
+                var player by remember { mutableStateOf<MediaPlayer?>(null) }
+                DisposableEffect(t.voiceNotePath) {
+                    onDispose { player?.release() }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = {
+                        if (isPlaying) {
+                            player?.pause()
+                            isPlaying = false
+                        } else {
+                            if (player == null) {
+                                player = MediaPlayer().apply {
+                                    setDataSource(t.voiceNotePath)
+                                    prepare()
+                                    setOnCompletionListener { isPlaying = false }
+                                }
+                            }
+                            player?.start()
+                            isPlaying = true
+                        }
+                    }) {
+                        Icon(
+                            if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                            contentDescription = if (isPlaying) "Pause voice note" else "Play voice note"
+                        )
+                    }
+                    Text("Voice note")
+                }
+            }
 
             Spacer(Modifier.height(24.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {

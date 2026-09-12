@@ -79,5 +79,8 @@ dependencies {
     implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
 
+    // Image display for transaction attachments
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

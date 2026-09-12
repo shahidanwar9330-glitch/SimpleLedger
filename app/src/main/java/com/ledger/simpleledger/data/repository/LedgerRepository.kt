@@ -110,7 +110,9 @@ class LedgerRepository(
         date: Long,
         note: String?,
         paymentMethod: String?,
-        reference: String?
+        reference: String?,
+        attachmentUri: String? = null,
+        voiceNotePath: String? = null
     ): Long {
         require(amountMinor > 0) { "Amount must be greater than zero" }
         require(personId > 0) { "A person must be selected" }
@@ -124,7 +126,9 @@ class LedgerRepository(
                 date = date,
                 note = note?.trim()?.ifBlank { null },
                 paymentMethod = paymentMethod?.trim()?.ifBlank { null },
-                reference = reference?.trim()?.ifBlank { null }
+                reference = reference?.trim()?.ifBlank { null },
+                attachmentUri = attachmentUri,
+                voiceNotePath = voiceNotePath
             )
         )
     }

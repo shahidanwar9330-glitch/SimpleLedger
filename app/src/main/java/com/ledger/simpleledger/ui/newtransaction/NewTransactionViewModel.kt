@@ -29,6 +29,7 @@ data class NewTransactionUiState(
     val paymentMethod: String = "",
     val reference: String = "",
     val attachmentUri: String? = null,
+    val voiceNotePath: String? = null,
     val amountError: String? = null,
     val personError: String? = null,
     val isSaving: Boolean = false,
@@ -86,7 +87,8 @@ class NewTransactionViewModel(
                         note = t.note ?: "",
                         paymentMethod = t.paymentMethod ?: "",
                         reference = t.reference ?: "",
-                        attachmentUri = t.attachmentUri
+                        attachmentUri = t.attachmentUri,
+                        voiceNotePath = t.voiceNotePath
                     )
                 }
             }
@@ -101,6 +103,7 @@ class NewTransactionViewModel(
     fun setPaymentMethod(text: String) { _state.value = _state.value.copy(paymentMethod = text) }
     fun setReference(text: String) { _state.value = _state.value.copy(reference = text) }
     fun setAttachment(uri: String?) { _state.value = _state.value.copy(attachmentUri = uri) }
+    fun setVoiceNote(path: String?) { _state.value = _state.value.copy(voiceNotePath = path) }
     fun selectPerson(id: Long, name: String) {
         _state.value = _state.value.copy(selectedPersonId = id, selectedPersonName = name, personError = null)
     }
@@ -153,7 +156,9 @@ class NewTransactionViewModel(
                         date = s.dateMillis,
                         note = s.note,
                         paymentMethod = s.paymentMethod,
-                        reference = s.reference
+                        reference = s.reference,
+                        attachmentUri = s.attachmentUri,
+                        voiceNotePath = s.voiceNotePath
                     )
                 } else {
                     val existing = repository.getTransaction(s.editId)
@@ -169,7 +174,8 @@ class NewTransactionViewModel(
                                 note = s.note.ifBlank { null },
                                 paymentMethod = s.paymentMethod.ifBlank { null },
                                 reference = s.reference.ifBlank { null },
-                                attachmentUri = s.attachmentUri
+                                attachmentUri = s.attachmentUri,
+                                voiceNotePath = s.voiceNotePath
                             )
                         )
                     }
