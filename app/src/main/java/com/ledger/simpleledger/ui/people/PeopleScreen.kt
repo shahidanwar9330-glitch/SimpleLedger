@@ -2,7 +2,6 @@ package com.ledger.simpleledger.ui.people
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -34,8 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ledger.simpleledger.ui.SimpleViewModelFactory
+import com.ledger.simpleledger.ui.components.BalanceCard
 import com.ledger.simpleledger.ui.components.EmptyState
 import com.ledger.simpleledger.ui.components.PersonAvatar
+import com.ledger.simpleledger.ui.components.SummaryCard
 import com.ledger.simpleledger.ui.currentLedgerApp
 import com.ledger.simpleledger.ui.theme.LocalLedgerColors
 import com.ledger.simpleledger.util.Money
@@ -44,19 +45,21 @@ import com.ledger.simpleledger.util.Money
 @Composable
 fun PeopleScreen(
     onOpenPerson: (Long) -> Unit,
-    onAddPerson: () -> Unit
+    onAddPerson: () -> Unit,
+    onNewTransaction: (String?) -> Unit
 ) {
     val app = currentLedgerApp()
     val viewModel: PeopleViewModel = viewModel(
-        factory = SimpleViewModelFactory { PeopleViewModel(app.repository) }
+        factory = SimpleViewModelFactory { PeopleViewModel(app.repository, app.settingsPrefs) }
     )
     val query by viewModel.query.collectAsStateWithLifecycle()
     val all by viewModel.people.collectAsStateWithLifecycle()
+    val totals by viewModel.totals.collectAsStateWithLifecycle()
     val list = viewModel.filtered(all, query)
     val colors = LocalLedgerColors.current
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("People") }) },
+        topBar = { TopAppBar(title = { Text("Khata Book") }) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddPerson,
@@ -65,54 +68,85 @@ fun PeopleScreen(
             )
         }
     ) { padding ->
-        Column(Modifier.padding(padding).fillMaxSize()) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = viewModel::setQuery,
-                placeholder = { Text(if (all.isEmpty()) "Search people" else "${all.size} People") },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                singleLine = true,
-                shape = MaterialTheme.shapes.extraLarge,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
-            )
+        LazyColumn(
+            modifier = Modifier.padding(padding).fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp)
+        ) {
+            item {
+                Spacer(Modifier.height(12.dp))
+                BalanceCard(totals.balanceMinor, totals.currency, Modifier.fillMaxWidth())
+            }
+            item {
+                Spacer(Modifier.height(12.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SummaryCard(
+                        title = "Maine Liya",
+                        amountMinor = totals.totalLiyaMinor,
+                        currency = totals.currency,
+                        accentColor = colors.liya,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNewTransaction("LIYA") }
+                    )
+                    SummaryCard(
+                        title = "Maine Diya",
+                        amountMinor = totals.totalDiyaMinor,
+                        currency = totals.currency,
+                        accentColor = colors.diya,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onNewTransaction("DIYA") }
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+            item {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = viewModel::setQuery,
+                    placeholder = { Text(if (all.isEmpty()) "Search people" else "${all.size} People") },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    singleLine = true,
+                    shape = MaterialTheme.shapes.extraLarge,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                )
+            }
 
             if (list.isEmpty()) {
-                EmptyState(title = "No people yet", subtitle = "Tap Add Person to add your first person or account.")
+                item {
+                    EmptyState(title = "No people yet", subtitle = "Tap Add Person to add your first person or account.")
+                }
             } else {
-                LazyColumn(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
-                    items(list, key = { it.id }) { p ->
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable { onOpenPerson(p.id) }
-                                .padding(vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            PersonAvatar(p.name)
-                            Column(Modifier.weight(1f).padding(start = 12.dp)) {
-                                Text(p.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                                Text(
-                                    if (p.balanceMinor == 0L) "Settled up"
-                                    else if (p.balanceMinor > 0) "You'll get" else "You'll give",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                items(list, key = { it.id }) { p ->
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { onOpenPerson(p.id) }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        PersonAvatar(p.name)
+                        Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                            Text(p.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                             Text(
-                                Money.format(kotlin.math.abs(p.balanceMinor)),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = when {
-                                    p.balanceMinor > 0 -> colors.liya
-                                    p.balanceMinor < 0 -> colors.diya
-                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                                fontWeight = FontWeight.Bold
+                                if (p.balanceMinor == 0L) "Settled up"
+                                else if (p.balanceMinor > 0) "You'll get" else "You'll give",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                        Text(
+                            Money.format(kotlin.math.abs(p.balanceMinor)),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = when {
+                                p.balanceMinor > 0 -> colors.liya
+                                p.balanceMinor < 0 -> colors.diya
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-                    item { Spacer(Modifier.height(80.dp)) }
+                    Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
                 }
+                item { Spacer(Modifier.height(80.dp)) }
             }
         }
     }

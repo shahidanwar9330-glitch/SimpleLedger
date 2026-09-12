@@ -1,7 +1,6 @@
 package com.ledger.simpleledger.ui.navigation
 
 sealed class Screen(val route: String) {
-    object Dashboard : Screen("dashboard")
     object Transactions : Screen("transactions")
     object People : Screen("people")
     object Reports : Screen("reports")
@@ -32,5 +31,5 @@ sealed class Screen(val route: String) {
 }
 
 val bottomNavScreens = listOf(
-    Screen.Dashboard, Screen.Transactions, Screen.People, Screen.Reports, Screen.Settings
+    Screen.Transactions, Screen.People, Screen.Reports, Screen.Settings
 )

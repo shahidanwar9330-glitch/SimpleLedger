@@ -3,7 +3,6 @@ package com.ledger.simpleledger.ui.navigation
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.getValue
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Receipt
@@ -25,7 +24,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import com.ledger.simpleledger.ui.addperson.AddEditPersonScreen
-import com.ledger.simpleledger.ui.dashboard.DashboardScreen
 import com.ledger.simpleledger.ui.newtransaction.NewTransactionScreen
 import com.ledger.simpleledger.ui.people.PeopleScreen
 import com.ledger.simpleledger.ui.persondetail.PersonDetailScreen
@@ -35,16 +33,14 @@ import com.ledger.simpleledger.ui.transactiondetail.TransactionDetailScreen
 import com.ledger.simpleledger.ui.transactions.TransactionsScreen
 
 private fun iconFor(route: String) = when (route) {
-    Screen.Dashboard.route -> Icons.Filled.Home
     Screen.Transactions.route -> Icons.Filled.Receipt
     Screen.People.route -> Icons.Filled.People
     Screen.Reports.route -> Icons.Filled.PieChart
     Screen.Settings.route -> Icons.Filled.Settings
-    else -> Icons.Filled.Home
+    else -> Icons.Filled.People
 }
 
 private fun labelFor(route: String) = when (route) {
-    Screen.Dashboard.route -> "Home"
     Screen.Transactions.route -> "History"
     Screen.People.route -> "People"
     Screen.Reports.route -> "Reports"
@@ -86,16 +82,9 @@ fun SimpleLedgerNavGraph() {
     ) { padding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Dashboard.route,
+            startDestination = Screen.People.route,
             modifier = Modifier.padding(padding)
         ) {
-            composable(Screen.Dashboard.route) {
-                DashboardScreen(
-                    onNewTransaction = { type -> navController.navigate(Screen.NewTransaction.build(type = type)) },
-                    onOpenTransaction = { id -> navController.navigate(Screen.TransactionDetail.build(id)) }
-                )
-            }
-
             composable(Screen.Transactions.route) {
                 TransactionsScreen(
                     onOpenTransaction = { id -> navController.navigate(Screen.TransactionDetail.build(id)) }
@@ -105,7 +94,8 @@ fun SimpleLedgerNavGraph() {
             composable(Screen.People.route) {
                 PeopleScreen(
                     onOpenPerson = { id -> navController.navigate(Screen.PersonDetail.build(id)) },
-                    onAddPerson = { navController.navigate(Screen.AddEditPerson.build()) }
+                    onAddPerson = { navController.navigate(Screen.AddEditPerson.build()) },
+                    onNewTransaction = { type -> navController.navigate(Screen.NewTransaction.build(type = type)) }
                 )
             }
 
